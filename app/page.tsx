@@ -105,6 +105,9 @@ export default function Home() {
 
         {result && <ResultCard data={result} />}
       </div>
+      <footer className="mt-auto py-10 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+      • CertView (Domain & SSL Diagnostics Tool) Made by Ismail Mahmud Nur • 
+      </footer>
     </main>
   );
 }
