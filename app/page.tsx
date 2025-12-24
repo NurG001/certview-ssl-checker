@@ -11,6 +11,7 @@ export default function Home() {
   const [error, setError] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // Initialize and toggle dark mode
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -23,13 +24,14 @@ export default function Home() {
     e.preventDefault();
     if (!domain) return;
 
+    // 1. INPUT CLEANUP: Sanitize the domain
     const sanitizedDomain = domain
       .trim()
       .replace(/^(https?:\/\/)/, "") 
       .split('/')[0]                 
       .split('?')[0];                
 
-    // ADVANCED ERROR HANDLING: Client-side TLD check
+    // 2. ADVANCED ERROR HANDLING: Client-side TLD check
     if (!sanitizedDomain.includes('.')) {
       setError("Please include a domain extension (the part after the dot, like .com or .org).");
       return;
@@ -51,19 +53,17 @@ export default function Home() {
       if (res.ok) {
         setResult(data);
       } else {
-        // ADVANCED ERROR HANDLING: Technical error translation
+        // Mapping technical codes to human-friendly messages
         if (data.error?.includes('ENOTFOUND')) {
-          setError(`Could not find "${sanitizedDomain}". Double-check the spelling and ensure you included the extension after the dot.`);
+          setError(`Could not find "${sanitizedDomain}". Ensure the TLD (the part after the dot) is correct.`);
         } else if (data.error?.includes('ECONNREFUSED')) {
-          setError("Connection refused. This server may not have an active SSL certificate or port 443 open.");
-        } else if (data.error?.includes('ETIMEDOUT')) {
-          setError("The connection timed out. The server is taking too long to respond.");
+          setError("Connection refused. The server may not have port 443 open for SSL.");
         } else {
           setError(data.error || 'Diagnostic failed. Please check the domain.');
         }
       }
     } catch (err) {
-      setError('Connection failed. Please check your internet and try again.');
+      setError('Connection failed. Please check your network and try again.');
     } finally {
       setLoading(false);
     }
@@ -72,6 +72,7 @@ export default function Home() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden transition-colors duration-500 bg-[#fdfdfd] dark:bg-slate-950 p-4 md:p-10">
       
+      {/* Theme Toggle Button */}
       <button 
         onClick={() => setIsDarkMode(!isDarkMode)}
         className="absolute top-6 right-6 z-50 p-3 rounded-2xl bg-white dark:bg-slate-900 shadow-xl ring-1 ring-slate-200 dark:ring-slate-800 text-slate-500 dark:text-amber-400 transition-all hover:scale-110 active:scale-95"
@@ -79,10 +80,11 @@ export default function Home() {
         {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
       </button>
 
+      {/* Visual Background Aura */}
       <div className="absolute top-[-10%] left-[-10%] h-[50%] w-[50%] rounded-full bg-emerald-100/40 dark:bg-emerald-900/10 blur-[120px]" />
       <div className="absolute bottom-[-10%] right-[-10%] h-[50%] w-[50%] rounded-full bg-blue-100/40 dark:bg-blue-900/10 blur-[120px]" />
 
-      <div className="z-10 w-full max-w-3xl">
+      <div className="z-10 w-full max-w-4xl">
         <header className="mb-12 text-center">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-white dark:bg-slate-900 shadow-2xl ring-1 ring-slate-100 dark:ring-slate-800">
             <ShieldCheck className="text-emerald-500" size={40} strokeWidth={1.5} />
@@ -90,11 +92,13 @@ export default function Home() {
           <h1 className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-5xl md:text-7xl font-black tracking-tight text-transparent">
             CertView
           </h1>
-          <p className="mt-4 text-base md:text-lg font-medium text-slate-500 dark:text-slate-400 mx-auto whitespace-nowrap">
+          {/* Tagline on one line */}
+          <p className="mt-4 text-base md:text-lg font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
             Instantly verify domain security with advanced certificate diagnostics.
           </p>
         </header>
 
+        {/* SEARCH BAR */}
         <form onSubmit={checkSSL} className="group relative mx-auto max-w-2xl">
           <div className="absolute -inset-1 rounded-[2.5rem] bg-gradient-to-r from-emerald-400 to-blue-500 opacity-20 blur-xl transition duration-1000 group-focus-within:opacity-40" />
           <div className="relative flex flex-col md:flex-row items-center gap-2 rounded-[2rem] bg-white dark:bg-slate-900 p-2 shadow-2xl ring-1 ring-slate-200/50 dark:ring-slate-800">
@@ -125,12 +129,10 @@ export default function Home() {
         </form>
 
         {error && (
-          <div className="mx-auto mt-8 max-w-xl animate-in fade-in slide-in-from-top-2 rounded-2xl border border-rose-100 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/30 p-5 text-center shadow-lg backdrop-blur-sm">
-            <div className="flex items-center justify-center gap-3 text-rose-600 dark:text-rose-400">
-              <ShieldAlert size={20} className="shrink-0" />
-              <p className="text-sm font-bold leading-relaxed">
-                {error}
-              </p>
+          <div className="mx-auto mt-8 max-w-xl animate-in fade-in slide-in-from-top-2 rounded-2xl border border-rose-100 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/30 p-4 text-center text-sm font-bold text-rose-600 backdrop-blur-sm">
+            <div className="flex items-center justify-center gap-2">
+              <ShieldAlert size={18} />
+              {error}
             </div>
           </div>
         )}
@@ -139,7 +141,7 @@ export default function Home() {
       </div>
 
       <footer className="absolute bottom-8 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-600">
-       &bull; CertView (SSL Diagnostics Tool) made by Ismail Mahmud Nur &bull; 
+      &bull; CertView (SSL Diagnostics Tool) made by Ismail Mahmud Nur &bull;
       </footer>
     </main>
   );

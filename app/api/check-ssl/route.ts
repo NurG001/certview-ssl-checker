@@ -1,63 +1,64 @@
 import { NextResponse } from 'next/server';
-import tls from 'node:tls';
+import tls from 'node:tls'; //
 
-// 1. Ensure the helper function is clearly typed
+// ... rest of your code
+// Define a custom type to include EV-specific fields
+interface EVSubject {
+  O?: string;
+  jurisdictionC?: string;
+  jurisdictionCountryName?: string;
+  businessCategory?: string;
+  serialNumber?: string;
+}
+
 function getValidationType(subject: any): "DV" | "OV" | "EV" | "Unknown" {
-  if (!subject) return "Unknown";
-  const hasOrg = !!subject.O;
-  const hasEVFields = !!(subject.jurisdictionC || subject.businessCategory || subject.serialNumber);
+  if (!subject || Object.keys(subject).length === 0) return "Unknown";
+
+  // Cast to our custom type or 'any' to access EV fields
+  const s = subject as EVSubject;
+  
+  const hasOrg = !!s.O;
+  const hasEVFields = !!(s.jurisdictionC || s.jurisdictionCountryName || s.businessCategory || s.serialNumber);
+
   if (hasOrg && hasEVFields) return "EV";
   if (hasOrg) return "OV";
   return "DV";
 }
 
-export async function POST(req: Request) {
-  try {
-    const { domain } = await req.json();
-    const host = domain.replace(/^(https?:\/\/)/, "").split('/')[0].split('?')[0];
-
-    // 2. ADD THE TYPE <NextResponse> TO THE PROMISE CONSTRUCTOR
-    return await new Promise<NextResponse>((resolve) => {
-      const socket = tls.connect({
-        host,
-        port: 443,
-        servername: host,
-        rejectUnauthorized: false,
-      }, () => {
-        const cert = socket.getPeerCertificate(true);
-        
-        if (!cert || Object.keys(cert).length === 0) {
-          socket.destroy();
-          resolve(NextResponse.json({ error: "No certificate found" }, { status: 404 }));
-          return;
-        }
-
-        const expiry = new Date(cert.valid_to);
-        const daysLeft = Math.ceil((expiry.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-
-        const data = {
-          valid: socket.authorized,
-          issuer: cert.issuer.O || cert.issuer.CN || "Unknown Issuer",
-          expiryDate: cert.valid_to,
-          daysLeft: daysLeft > 0 ? daysLeft : 0,
-          type: getValidationType(cert.subject),
-        };
-
+// Update your performSSLCheck function to use this
+async function performSSLCheck(host: string): Promise<any> {
+  return new Promise((resolve) => {
+    const socket = tls.connect({ 
+      host, 
+      port: 443, 
+      servername: host, 
+      rejectUnauthorized: false 
+    }, () => {
+      const cert = socket.getPeerCertificate(true);
+      
+      // Check if certificate is valid/exists
+      if (!cert || Object.keys(cert).length === 0) {
         socket.destroy();
-        resolve(NextResponse.json(data));
-      });
+        resolve({ error: "No certificate found" });
+        return;
+      }
 
-      socket.on('error', (err) => {
-        socket.destroy();
-        resolve(NextResponse.json({ error: err.message }, { status: 500 }));
-      });
+      const expiry = new Date(cert.valid_to);
+      const daysLeft = Math.ceil((expiry.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
 
-      socket.setTimeout(10000, () => {
-        socket.destroy();
-        resolve(NextResponse.json({ error: "Connection Timeout" }, { status: 504 }));
+      resolve({
+        valid: socket.authorized,
+        issuer: cert.issuer.O || cert.issuer.CN || "Unknown Issuer",
+        expiryDate: cert.valid_to,
+        daysLeft: daysLeft > 0 ? daysLeft : 0,
+        type: getValidationType(cert.subject) // Passed correctly now
       });
+      socket.destroy();
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Invalid request format" }, { status: 400 });
-  }
+
+    socket.on('error', (err) => {
+      socket.destroy();
+      resolve({ error: err.message });
+    });
+  });
 }
