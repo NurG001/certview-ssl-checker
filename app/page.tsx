@@ -24,7 +24,7 @@ export default function Home() {
     if (!domain) return;
     const sanitizedDomain = domain.trim().toLowerCase().replace(/^(https?:\/\/)/, "").split('/')[0].split('?')[0];
     if (!sanitizedDomain.includes('.')) {
-      setError("Please include a domain extension (e.g., .com).");
+      setError("Please include a domain extension (e.g., .com, .edu, .org).");
       return;
     }
     setLoading(true);
