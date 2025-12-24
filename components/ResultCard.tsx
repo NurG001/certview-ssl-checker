@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, ShieldAlert, Calendar, Building2, Fingerprint, Clock, Globe } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Building2, Fingerprint, Clock, Globe } from 'lucide-react';
 
 interface SSLData {
   valid: boolean;
@@ -7,26 +7,26 @@ interface SSLData {
   expiryDate: string;
   daysLeft: number;
   type: "DV" | "OV" | "EV" | "Unknown";
-  domainExpiry?: string; // New field from our RDAP API
+  domainExpiry?: string; // RDAP Registry Expiry
 }
 
 export default function ResultCard({ data }: { data: SSLData }) {
   const isSecure = data.valid;
   const theme = isSecure ? 'emerald' : 'rose';
 
-  // Helper to format the year for the Domain Registry tile
+  // Helper to extract the expiry year for the Domain Registry tile
   const getExpiryYear = (dateStr?: string) => {
     if (!dateStr || dateStr === "Not Available") return "N/A";
     return new Date(dateStr).getFullYear();
   };
 
   return (
-    <div className="mt-12 w-full max-w-3xl animate-in fade-in zoom-in duration-500">
+    <div className="mt-12 w-full animate-in fade-in zoom-in duration-500">
       
-      {/* 1. HERO BANNER */}
-      <div className="relative overflow-hidden rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-2xl shadow-slate-200/50 dark:shadow-none">
-        <div className="relative flex flex-col md:flex-row items-center gap-8">
-          <div className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-[2rem] shadow-xl transition-all duration-500 ${
+      {/* 1. HERO BANNER: Fixed High-Contrast Logo */}
+      <div className="relative overflow-hidden rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-2xl">
+        <div className="relative flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
+          <div className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-[2rem] shadow-xl ${
             isSecure ? 'bg-emerald-500 shadow-emerald-500/40' : 'bg-rose-500 shadow-rose-500/40'
           }`}>
             {isSecure ? (
@@ -36,52 +36,48 @@ export default function ResultCard({ data }: { data: SSLData }) {
             )}
           </div>
 
-          <div className="text-center md:text-left">
+          <div>
             <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
               <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
                 {isSecure ? "Connection Secure" : "Security Risk"}
               </h2>
             </div>
-            <p className="text-lg font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+            <p className="text-lg font-medium text-slate-500 dark:text-slate-400">
               {isSecure 
                 ? "This domain uses industry-standard encryption to protect data." 
-                : "The certificate is invalid, expired, or issued by an untrusted authority."}
+                : "The certificate is invalid or issued by an untrusted authority."}
             </p>
           </div>
         </div>
       </div>
 
-      {/* 2. BENTO GRID: Now with 3 Columns on larger screens */}
+      {/* 2. BENTO GRID: 3-Column Symmetrical Layout */}
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         
         <BentoTile 
-          label="SSL Validation" 
+          label="Validation Level" 
           value={data.type} 
           icon={<Fingerprint className="text-indigo-500" size={24} />}
-          description={
-            data.type === 'EV' ? 'Highest tier vetting.' : 
-            data.type === 'OV' ? 'Organization verified.' : 
-            'Basic domain ownership.'
-          }
+          description="Vetting level of the security certificate."
         />
         
         <BentoTile 
-          label="SSL Issuer" 
+          label="Trusted Issuer" 
           value={data.issuer} 
           icon={<Building2 className="text-blue-500" size={24} />}
-          description="The Authority verifying this site."
+          description="The authority that verified this connection."
         />
 
-        {/* NEW: Domain Registry Tile */}
+        {/* DOMAIN REGISTRY TILE: Tracks ownership (e.g., 2028) */}
         <BentoTile 
           label="Domain Registry" 
           value={`Expires ${getExpiryYear(data.domainExpiry)}`} 
           icon={<Globe className="text-amber-500" size={24} />}
-          description="The ownership contract for this domain name."
+          description="The long-term ownership contract for this domain."
         />
 
-        {/* 3. FULL-WIDTH EXPIRY TIMELINE */}
-        <div className="md:col-span-2 lg:col-span-3 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm">
+        {/* 3. FULL-WIDTH SSL LIFESPAN BAR */}
+        <div className="md:col-span-2 lg:col-span-3 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10">
           <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500">
@@ -89,7 +85,7 @@ export default function ResultCard({ data }: { data: SSLData }) {
               </div>
               <div>
                 <h4 className="text-xl font-bold text-slate-800 dark:text-white">SSL Lifespan</h4>
-                <p className="text-sm text-slate-400 font-medium italic">Certificate valid until {new Date(data.expiryDate).toLocaleDateString()}</p>
+                <p className="text-sm text-slate-400 italic">Certificate valid until {new Date(data.expiryDate).toLocaleDateString()}</p>
               </div>
             </div>
             <div className="rounded-2xl px-6 py-3 bg-emerald-50 dark:bg-emerald-900/20 text-center">
@@ -105,8 +101,8 @@ export default function ResultCard({ data }: { data: SSLData }) {
             />
           </div>
           
-          <div className="mt-6 flex justify-between text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">
-            <span>Issue Date: Verified</span>
+          <div className="mt-6 flex justify-between text-[11px] font-black uppercase text-slate-300">
+            <span>Verified Status</span>
             <span>Expiration: {new Date(data.expiryDate).toDateString()}</span>
           </div>
         </div>
@@ -120,7 +116,7 @@ function BentoTile({ label, value, icon, description }: { label: string; value: 
     <div className="group rounded-[2.5rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 transition-all hover:border-slate-300">
       <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 dark:bg-slate-800">{icon}</div>
       <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">{label}</p>
-      <h4 className="text-2xl font-black text-slate-800 dark:text-white break-words leading-tight">{value}</h4>
+      <h4 className="text-2xl font-black text-slate-800 dark:text-white truncate">{value}</h4>
       <p className="mt-3 text-sm font-medium text-slate-400 dark:text-slate-500 leading-relaxed">{description}</p>
     </div>
   );

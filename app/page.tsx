@@ -11,7 +11,7 @@ export default function Home() {
   const [error, setError] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Initialize and toggle dark mode
+  // Theme Persistence & Toggle
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -24,16 +24,17 @@ export default function Home() {
     e.preventDefault();
     if (!domain) return;
 
-    // 1. INPUT CLEANUP: Sanitize the domain
+    // 1. INPUT SANITIZATION: Removes https:// and trailing slashes
     const sanitizedDomain = domain
       .trim()
+      .toLowerCase()
       .replace(/^(https?:\/\/)/, "") 
       .split('/')[0]                 
       .split('?')[0];                
 
-    // 2. ADVANCED ERROR HANDLING: Client-side TLD check
+    // 2. TLD VALIDATION: Client-side check for the dot
     if (!sanitizedDomain.includes('.')) {
-      setError("Please include a domain extension (the part after the dot, like .com or .org).");
+      setError("Please include a domain extension (e.g., .com, .org, or .net).");
       return;
     }
 
@@ -53,17 +54,17 @@ export default function Home() {
       if (res.ok) {
         setResult(data);
       } else {
-        // Mapping technical codes to human-friendly messages
+        // Human-friendly error mapping
         if (data.error?.includes('ENOTFOUND')) {
-          setError(`Could not find "${sanitizedDomain}". Ensure the TLD (the part after the dot) is correct.`);
+          setError(`Could not resolve "${sanitizedDomain}". Please check the spelling.`);
         } else if (data.error?.includes('ECONNREFUSED')) {
-          setError("Connection refused. The server may not have port 443 open for SSL.");
+          setError("Connection refused. The server might not have port 443 open.");
         } else {
-          setError(data.error || 'Diagnostic failed. Please check the domain.');
+          setError(data.error || 'Diagnostic failed. Please try again.');
         }
       }
     } catch (err) {
-      setError('Connection failed. Please check your network and try again.');
+      setError('Network error. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -72,7 +73,7 @@ export default function Home() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden transition-colors duration-500 bg-[#fdfdfd] dark:bg-slate-950 p-4 md:p-10">
       
-      {/* Theme Toggle Button */}
+      {/* Theme Switcher */}
       <button 
         onClick={() => setIsDarkMode(!isDarkMode)}
         className="absolute top-6 right-6 z-50 p-3 rounded-2xl bg-white dark:bg-slate-900 shadow-xl ring-1 ring-slate-200 dark:ring-slate-800 text-slate-500 dark:text-amber-400 transition-all hover:scale-110 active:scale-95"
@@ -80,50 +81,42 @@ export default function Home() {
         {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
       </button>
 
-      {/* Visual Background Aura */}
+      {/* Background Decor */}
       <div className="absolute top-[-10%] left-[-10%] h-[50%] w-[50%] rounded-full bg-emerald-100/40 dark:bg-emerald-900/10 blur-[120px]" />
       <div className="absolute bottom-[-10%] right-[-10%] h-[50%] w-[50%] rounded-full bg-blue-100/40 dark:bg-blue-900/10 blur-[120px]" />
 
-      <div className="z-10 w-full max-w-4xl">
-        <header className="mb-12 text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-white dark:bg-slate-900 shadow-2xl ring-1 ring-slate-100 dark:ring-slate-800">
+      <div className="z-10 w-full max-w-4xl flex flex-col items-center">
+        <header className="mb-12 text-center flex flex-col items-center">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-white dark:bg-slate-900 shadow-2xl ring-1 ring-slate-100 dark:ring-slate-800">
             <ShieldCheck className="text-emerald-500" size={40} strokeWidth={1.5} />
           </div>
-          <h1 className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-5xl md:text-7xl font-black tracking-tight text-transparent">
+          <h1 className="bg-gradient-to-b from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-5xl md:text-7xl font-black tracking-tight text-transparent">
             CertView
           </h1>
-          {/* Tagline on one line */}
           <p className="mt-4 text-base md:text-lg font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
             Instantly verify domain security with advanced certificate diagnostics.
           </p>
         </header>
 
         {/* SEARCH BAR */}
-        <form onSubmit={checkSSL} className="group relative mx-auto max-w-2xl">
+        <form onSubmit={checkSSL} className="group relative w-full max-w-2xl">
           <div className="absolute -inset-1 rounded-[2.5rem] bg-gradient-to-r from-emerald-400 to-blue-500 opacity-20 blur-xl transition duration-1000 group-focus-within:opacity-40" />
           <div className="relative flex flex-col md:flex-row items-center gap-2 rounded-[2rem] bg-white dark:bg-slate-900 p-2 shadow-2xl ring-1 ring-slate-200/50 dark:ring-slate-800">
             <div className="flex w-full items-center pl-4 gap-3">
-              <Search className="text-slate-400 dark:text-slate-600" size={22} />
+              <Search className="text-slate-400" size={22} />
               <input
                 type="text"
                 placeholder="Enter domain (e.g. google.com)"
-                className="w-full bg-transparent py-4 text-lg font-semibold text-slate-700 dark:text-white outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                className="w-full bg-transparent py-4 text-lg font-semibold text-slate-700 dark:text-white outline-none placeholder:text-slate-300"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
               />
             </div>
             <button
               disabled={loading}
-              className="w-full md:w-auto flex items-center justify-center gap-2 rounded-[1.5rem] bg-slate-900 dark:bg-emerald-600 px-10 py-4 font-bold text-white transition-all hover:bg-slate-800 dark:hover:bg-emerald-500 disabled:opacity-50"
+              className="w-full md:w-auto flex items-center justify-center gap-2 rounded-[1.5rem] bg-slate-900 dark:bg-emerald-600 px-10 py-4 font-bold text-white transition-all hover:bg-slate-800 disabled:opacity-50"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" size={20} />
-                  Scanning
-                </>
-              ) : (
-                'Analyze'
-              )}
+              {loading ? <Loader2 className="animate-spin" size={20} /> : 'Analyze'}
             </button>
           </div>
         </form>
@@ -140,8 +133,8 @@ export default function Home() {
         {result && <ResultCard data={result} />}
       </div>
 
-      <footer className="absolute bottom-8 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-600">
-      &bull; CertView (SSL Diagnostics Tool) made by Ismail Mahmud Nur &bull;
+      <footer className="mt-20 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+      &bull; CertView (SSL Diagnostics Tool made by Ismail Mahmud Nur) &bull;
       </footer>
     </main>
   );
